@@ -1,9 +1,9 @@
-// Chatbot.js
 import React, { useState } from 'react';
-import './ChatBotStyles.css'; // Chatbot-specific styles
+import './ChatBotStyles.css';
 import WelcomeScreen from './WelcomeScreen';
 import ChatInput from './ChatInput';
-import Sidebar from './Sidebar'; // Import Sidebar component
+import Sidebar from './Sidebar';
+import { handleChatQuery } from './services/ChatService';
 
 const Chatbot = () => {
     const [messages, setMessages] = useState([]);
@@ -11,52 +11,50 @@ const Chatbot = () => {
     const [conversations, setConversations] = useState([]);
     const [input, setInput] = useState('');
 
-    const handleSendMessage = async () => {
-        // Call API endpoint to send message and get response
-        const response = await fetch('http://127.0.0.1:5011/search', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ text: input }),
-        });
-        const data = await response.json();
-        const conversation = {
-            id: Date.now(),
-            role: 'user',
-            message: input,
-        };
-        setConversations([...conversations, conversation]);
-        const botResponse = {
-            id: Date.now(),
-            role: 'bot',
-            message: data.response,
-        };
-        setConversations([...conversations, botResponse]);
-        setInput('');
-        return (botResponse)
-    };
+    // const handleSendMessage = async () => {
+    //     const response = await fetch('http://127.0.0.1:5011/search', {
+    //         method: 'POST',
+    //         headers: {
+    //             'Content-Type': 'application/json',
+    //         },
+    //         body: JSON.stringify({ text: input }),
+    //     });
+    //     const data = await response.json();
+    //     const conversation = {
+    //         id: Date.now(),
+    //         role: 'user',
+    //         message: input,
+    //     };
+    //     // setConversations([...conversations, conversation]);
+    //     const botResponse = {
+    //         id: Date.now(),
+    //         role: 'bot',
+    //         message: data.response,
+    //     };
+    //     // setConversations([...conversations, botResponse]);
+    //     setInput('');
+    //     return (botResponse)
+    // };
 
-    const hardcodedResponses = {
-        "hii": "Hii!",
-        'hi': 'hi',
-        "hello": "Hello!",
-        "what is your name?": "I'm a chatbot created with React!",
-        "how are you?": "I'm just a bunch of code, but I'm doing great! How about you?",
-        "help": "Sure! What do you need help with?",
-        "thank you": "Thank You! See you next time!",
-        "bye": "Goodbye! Have a great day!"
-    };
-
-    const handleSend = (input) => {
+    const handleSend = async (input) => {
         if (input.trim()) {
             const userMessage = input;
-            const botResponse = hardcodedResponses[userMessage.toLowerCase()] || handleSendMessage();
-            setMessages((prevMessages) => [
-                ...prevMessages,
-                { sender: 'user', text: userMessage },
-                { sender: 'bot', text: botResponse }
-            ]);
+            const botResponse = handleChatQuery(input).then(res => {
+                setMessages((prevMessages) => [
+                    ...prevMessages,
+                    { sender: 'user', text: userMessage },
+                    { sender: 'bot', text: res }
+                ]);
+            })
+            .catch(err => {
+                console.log(err);
+                setMessages((prevMessages) => [
+                    ...prevMessages,
+                    { sender: 'user', text: userMessage },
+                    { sender: 'bot', text: "ERROR" }
+                ]);
+            })
+
         }
     };
 
@@ -68,7 +66,7 @@ const Chatbot = () => {
                     <div className="chat-window">
                         <header className="chat-header">
                             <img
-                                src="logo.png" // Replace with your logo's path
+                                src="logo.png"
                                 alt="Chatbot Logo"
                                 className="chat-logo"
                             />
